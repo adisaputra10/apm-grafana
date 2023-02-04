@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -39,6 +40,7 @@ var (
 	serviceVersion = os.Getenv("LS_SERVICE_VERSION")
 	endpoint       = os.Getenv("LS_SATELLITE_URL")
 	lsEnvironment  = os.Getenv("LS_ENVIRONMENT")
+	targetURLS1    = os.Getenv("DESTINATION_URLS1")
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -144,6 +146,8 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 	_, span := tracer.Start(r.Context(), operationName)
 	defer span.End()
 
+
+
 	length := rand.Intn(1024)
 	log.Printf("%s %s %s", r.Method, r.URL.Path, r.Proto)
 
@@ -160,7 +164,41 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 	span.AddEvent(fmt.Sprint(r.Header))
 
 	fmt.Fprintf(w, pingResult)
+	makeRequestS1(r.Context()) 
 }
+
+
+func makeRequestS1(ctx context.Context) {
+
+	 
+
+	ctx, span := tracer.Start(ctx, "makeRequest1")
+	defer span.End()
+
+	if len(targetURLS1) == 0 {
+		targetURLS1 = "http://localhost:8081/ping"
+		log.Printf("Using default targetURL %s", targetURLS1)
+	}
+
+	span.AddEvent("Making a request")
+	res, err := otelhttp.Get(ctx, targetURLS1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Printf("Body : %s", body)
+	fmt.Printf("Request to %s, got %d bytes\n", targetURLS1, res.ContentLength)
+
+	span.SetAttributes(
+		attribute.String("response", string(body)),
+	)
+
+	span.AddEvent("Made a request", trace.WithAttributes(attribute.String("greeting", "Hello"), attribute.String("farewell", "Bye")))
+	
+}
+
 
 func main() {
 	ctx := context.Background()
