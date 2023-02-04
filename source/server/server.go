@@ -40,7 +40,7 @@ var (
 	serviceVersion = os.Getenv("LS_SERVICE_VERSION")
 	endpoint       = os.Getenv("LS_SATELLITE_URL")
 	lsEnvironment  = os.Getenv("LS_ENVIRONMENT")
-	targetURLS1    = os.Getenv("DESTINATION_URLS1")
+	targetURLS1    = os.Getenv("DESTINATION_URL")
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
