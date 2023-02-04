@@ -145,7 +145,7 @@ services:
       context: ./source/client
       dockerfile: Dockerfile
     ports:
-      - "8081:8081"
+      - "8082:8081"
     environment:
       - LS_SERVICE_NAME=go-client
       - DESTINATION_URL=http://go-server:8081/ping
