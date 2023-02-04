@@ -1,0 +1,166 @@
+version: "2.1"
+volumes:
+  grafana:
+  postgres:
+services:
+  # Grafana agent batches and processes traces sent to it, generating metrics
+  # and auto-logs from those traces.
+  agent:
+    image: grafana/agent:latest
+    ports:
+      - "12347:12345"
+      - "12348:12348"
+      - "6832:6832"
+      - "55679:55679"
+    volumes:
+      - "${PWD}/agent/config.yaml:/etc/agent/agent.yaml"
+    command: [
+      "-config.file=/etc/agent/agent.yaml",
+      "-server.http.address=0.0.0.0:12345",
+    ]
+
+  # The Grafana dashboarding server.
+  grafana:
+    image: grafana/grafana:main
+    volumes:
+      - "./grafana/definitions:/var/lib/grafana/dashboards"
+      - "./grafana/provisioning:/etc/grafana/provisioning"
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_FEATURE_TOGGLES_ENABLE=tempoApmTable traceqlEditor flameGraph topnav
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+
+  # The Loki service stores logs sent to it, and takes queries from Grafana
+  # to visualise those logs.
+  loki:
+    image: grafana/loki
+    ports:
+      - "3100:3100"
+
+  # A RabbitMQ queue used to send message between the requester and the server microservices.
+  # mythical-queue:
+  #   image: rabbitmq:management
+  #   restart: always
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   healthcheck:
+  #     test: rabbitmq-diagnostics check_running
+  #     interval: 5s
+  #     timeout: 30s
+  #     retries: 10
+
+  # # A postgres DB used to store data by the API server microservice.
+  # mythical-database:
+  #   image: postgres:14.5
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: "mythical"
+  #   volumes:
+  #     - "postgres:/var/lib/postgresql/data"
+  #   ports:
+  #     - "5432:5432"
+
+  # # A microservice that makes requests to the API server microservice. Requests are also pushed onto the mythical-queue.
+  # mythical-requester:
+  #   build:
+  #     context: ./source
+  #     dockerfile: docker/Dockerfile
+  #     args:
+  #       SERVICE: mythical-beasts-requester
+  #   depends_on:
+  #     mythical-queue:
+  #       condition: service_healthy
+  #     mythical-server:
+  #       condition: service_started
+  #   ports:
+  #     - "4001:4001"
+  #   environment:
+  #     - NAMESPACE=production
+  #     - LOGS_TARGET=http://loki:3100/loki/api/v1/push
+  #     - TRACING_COLLECTOR_HOST=agent
+  #     - TRACING_COLLECTOR_PORT=4317
+  #     - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
+  #     - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.4
+
+  # # The API server microservice.
+  # # It writes logs directly to the Loki service, exposes metrics for the Prometheus
+  # # service and sends traces to the Grafana Agent instance.
+  # mythical-server:
+  #   build:
+  #     context: ./source
+  #     dockerfile: docker/Dockerfile
+  #     args:
+  #       SERVICE: mythical-beasts-server
+  #   ports:
+  #     - "4000:4000"
+  #     - "80:80"
+  #   depends_on:
+  #     - mythical-database
+  #   environment:
+  #     - NAMESPACE=production
+  #     - LOGS_TARGET=http://loki:3100/loki/api/v1/push
+  #     - TRACING_COLLECTOR_HOST=agent
+  #     - TRACING_COLLECTOR_PORT=4317
+  #     - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
+  #     - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.5
+
+  # # A microservice that consumes requests from the mythical-queue
+  # mythical-recorder:
+  #   build:
+  #     context: ./source
+  #     dockerfile: docker/Dockerfile
+  #     args:
+  #       SERVICE: mythical-beasts-recorder
+  #   depends_on:
+  #     mythical-queue:
+  #       condition: service_healthy
+  #   ports:
+  #     - "4002:4002"
+  #   environment:
+  #     - NAMESPACE=production
+  #     - LOGS_TARGET=http://loki:3100/loki/api/v1/push
+  #     - TRACING_COLLECTOR_HOST=agent
+  #     - TRACING_COLLECTOR_PORT=4317
+  #     - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
+  #     - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.5
+
+  # The Node Exporter collects resource usage from the host.
+  nodeexporter:
+    image: prom/node-exporter
+    privileged: true
+    ports:
+      - "9100:9100"
+
+  # The Tempo service stores traces send to it by Grafana Agent, and takes
+  # queries from Grafana to visualise those traces.
+  tempo:
+    image: grafana/tempo:2.0.0
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "55680:55680"
+      - "55681:55681"
+      - "14250:14250"
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - "${PWD}/tempo/tempo.yaml:/etc/tempo.yaml"
+
+  mimir:
+    image: grafana/mimir:latest
+    command: ["-config.file=/etc/mimir.yaml"]
+    ports:
+      - "9009:9009"
+    volumes:
+      - "${PWD}/mimir/mimir.yaml:/etc/mimir.yaml"
+
+  phlare:
+    image: grafana/phlare:latest
+    ports:
+      - "4100:4100"
+    command: [ "-config.file=/etc/phlare.yaml" ]
+    volumes:
+      - "${PWD}/phlare/phlare.yaml:/etc/phlare.yaml"
