@@ -128,6 +128,18 @@ services:
   #     - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
   #     - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.5
 
+  go-server:
+    build:
+      context: ./source/server
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - LS_SERVICE_NAME=go-server
+      - LS_SERVICE_VERSION=1.0
+      - LS_SATELLITE_URL=tempo:4317
+      - LS_ENVIRONMENT=development
+
   # The Node Exporter collects resource usage from the host.
   nodeexporter:
     image: prom/node-exporter
