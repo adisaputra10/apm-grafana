@@ -40,18 +40,18 @@ services:
     ports:
       - "3100:3100"
 
-  # A RabbitMQ queue used to send message between the requester and the server microservices.
-  # mythical-queue:
-  #   image: rabbitmq:management
-  #   restart: always
-  #   ports:
-  #     - "5672:5672"
-  #     - "15672:15672"
-  #   healthcheck:
-  #     test: rabbitmq-diagnostics check_running
-  #     interval: 5s
-  #     timeout: 30s
-  #     retries: 10
+  A RabbitMQ queue used to send message between the requester and the server microservices.
+  mythical-queue:
+    image: rabbitmq:management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_running
+      interval: 5s
+      timeout: 30s
+      retries: 10
 
   # # A postgres DB used to store data by the API server microservice.
   mythical-database:
@@ -65,26 +65,26 @@ services:
       - "5432:5432"
 
   # # A microservice that makes requests to the API server microservice. Requests are also pushed onto the mythical-queue.
-  # mythical-requester:
-  #   build:
-  #     context: ./source
-  #     dockerfile: docker/Dockerfile
-  #     args:
-  #       SERVICE: mythical-beasts-requester
-  #   depends_on:
-  #     mythical-queue:
-  #       condition: service_healthy
-  #     mythical-server:
-  #       condition: service_started
-  #   ports:
-  #     - "4001:4001"
-  #   environment:
-  #     - NAMESPACE=production
-  #     - LOGS_TARGET=http://loki:3100/loki/api/v1/push
-  #     - TRACING_COLLECTOR_HOST=agent
-  #     - TRACING_COLLECTOR_PORT=4317
-  #     - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
-  #     - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.4
+  mythical-requester:
+    build:
+      context: ./source
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE: mythical-beasts-requester
+    depends_on:
+      mythical-queue:
+        condition: service_healthy
+      mythical-server:
+        condition: service_started
+    ports:
+      - "4001:4001"
+    environment:
+      - NAMESPACE=production
+      - LOGS_TARGET=http://loki:3100/loki/api/v1/push
+      - TRACING_COLLECTOR_HOST=agent
+      - TRACING_COLLECTOR_PORT=4317
+      - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
+      - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.4
 
   # # The API server microservice.
   # # It writes logs directly to the Loki service, exposes metrics for the Prometheus
