@@ -37,6 +37,7 @@ var (
 	endpoint       = os.Getenv("LS_SATELLITE_URL")
 	lsEnvironment  = os.Getenv("LS_ENVIRONMENT")
 	targetURL      = os.Getenv("DESTINATION_URL")
+	targetURLS1    = os.Getenv("DESTINATION_URLS1")
 )
 
 func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
@@ -130,6 +131,34 @@ func makeRequest(ctx context.Context) {
 	span.AddEvent("Made a request", trace.WithAttributes(attribute.String("greeting", "Hello"), attribute.String("farewell", "Bye")))
 }
 
+
+func makeRequestS1(ctx context.Context) {
+	ctx, span := tracer.Start(ctx, "makeRequest")
+	defer span.End()
+
+	if len(targetURL) == 0 {
+		targetURL = "http://localhost:8081/ping"
+		log.Printf("Using default targetURL %s", targetURLS1)
+	}
+
+	span.AddEvent("Making a request")
+	res, err := otelhttp.Get(ctx, targetURL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Printf("Body : %s", body)
+	fmt.Printf("Request to %s, got %d bytes\n", targetURL, res.ContentLength)
+
+	span.SetAttributes(
+		attribute.String("response", string(body)),
+	)
+
+	span.AddEvent("Made a request", trace.WithAttributes(attribute.String("greeting", "Hello"), attribute.String("farewell", "Bye")))
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -157,6 +186,7 @@ func main() {
 
 	for {
 		makeRequest(ctx)
+		makeRequestS1(ctx)
 		time.Sleep(1 * time.Second)
 	}
 

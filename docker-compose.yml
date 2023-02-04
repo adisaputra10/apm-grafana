@@ -163,6 +163,7 @@ services:
     environment:
       - LS_SERVICE_NAME=go-client
       - DESTINATION_URL=http://go-server:8081/ping
+      - DESTINATION_URLS1=http://go-server1:8081/ping
       - LS_SERVICE_VERSION=1.0
       - LS_SATELLITE_URL=tempo:4317
       - LS_ENVIRONMENT=development
