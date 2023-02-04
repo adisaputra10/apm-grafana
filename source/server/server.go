@@ -39,7 +39,6 @@ var (
 	serviceVersion = os.Getenv("LS_SERVICE_VERSION")
 	endpoint       = os.Getenv("LS_SATELLITE_URL")
 	lsEnvironment  = os.Getenv("LS_ENVIRONMENT")
-	targetURL      = os.Getenv("DESTINATION_URL")
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -132,33 +131,6 @@ func randString(n int) string {
 	return sb.String()
 }
 
-func makeRequest(ctx context.Context) {
-	ctx, span := tracer.Start(ctx, "makeRequest")
-	defer span.End()
-
-	if len(targetURL) == 0 {
-		targetURL = "http://localhost:8081/ping"
-		log.Printf("Using default targetURL %s", targetURL)
-	}
-
-	span.AddEvent("Making a request")
-	res, err := otelhttp.Get(ctx, targetURL)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	fmt.Printf("Body : %s", body)
-	fmt.Printf("Request to %s, got %d bytes\n", targetURL, res.ContentLength)
-
-	span.SetAttributes(
-		attribute.String("response", string(body)),
-	)
-
-	span.AddEvent("Made a request", trace.WithAttributes(attribute.String("greeting", "Hello"), attribute.String("farewell", "Bye")))
-}
-
 // Wrap the handleRollDice so that telemetry data
 // can be automatically generated for it
 func wrapHandler() {
@@ -213,8 +185,6 @@ func main() {
 	tracer = tp.Tracer(serviceName, trace.WithInstrumentationVersion(serviceVersion))
 
 	wrapHandler()
-
-	 
 
 	fmt.Printf("Starting server on http://localhost:8081\n")
 	err = http.ListenAndServe(":8081", nil)
