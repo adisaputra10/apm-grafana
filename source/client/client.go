@@ -136,13 +136,13 @@ func makeRequestS1(ctx context.Context) {
 	ctx, span := tracer.Start(ctx, "makeRequest")
 	defer span.End()
 
-	if len(targetURL) == 0 {
+	if len(targetURLS1) == 0 {
 		targetURL = "http://localhost:8081/ping"
 		log.Printf("Using default targetURL %s", targetURLS1)
 	}
 
 	span.AddEvent("Making a request")
-	res, err := otelhttp.Get(ctx, targetURL)
+	res, err := otelhttp.Get(ctx, targetURLS1)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -187,6 +187,7 @@ func main() {
 
 	for {
 		makeRequest(ctx)
+		makeRequestS1(ctx)
 	 
 		time.Sleep(1 * time.Second)
 	}
