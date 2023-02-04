@@ -140,6 +140,19 @@ services:
       - LS_SATELLITE_URL=tempo:4317
       - LS_ENVIRONMENT=development
 
+  go-client:
+    build:
+      context: ./source/client
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - LS_SERVICE_NAME=go-client
+      - DESTINATION_URL=http://go-server:8081/ping
+      - LS_SERVICE_VERSION=1.0
+      - LS_SATELLITE_URL=tempo:4317
+      - LS_ENVIRONMENT=development
+
   # The Node Exporter collects resource usage from the host.
   nodeexporter:
     image: prom/node-exporter
