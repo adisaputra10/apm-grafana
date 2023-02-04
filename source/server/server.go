@@ -214,10 +214,7 @@ func main() {
 
 	wrapHandler()
 
-	for {
-		makeRequest(ctx)
-		time.Sleep(2 * time.Second)
-	}
+	 
 
 	fmt.Printf("Starting server on http://localhost:8081\n")
 	err = http.ListenAndServe(":8081", nil)

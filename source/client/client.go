@@ -157,6 +157,7 @@ func makeRequestS1(ctx context.Context) {
 	)
 
 	span.AddEvent("Made a request", trace.WithAttributes(attribute.String("greeting", "Hello"), attribute.String("farewell", "Bye")))
+	makeRequestS1(ctx)
 }
 
 func main() {
@@ -186,7 +187,7 @@ func main() {
 
 	for {
 		makeRequest(ctx)
-		makeRequestS1(ctx)
+	 
 		time.Sleep(1 * time.Second)
 	}
 
