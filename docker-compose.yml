@@ -40,7 +40,7 @@ services:
     ports:
       - "3100:3100"
 
-  A RabbitMQ queue used to send message between the requester and the server microservices.
+  #A RabbitMQ queue used to send message between the requester and the server microservices.
   mythical-queue:
     image: rabbitmq:management
     restart: always
