@@ -15,14 +15,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-
-	
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -32,7 +31,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
-//	middleware "go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -49,7 +47,7 @@ var (
 func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 
 	if len(endpoint) == 0 {
-		endpoint = "207.154.218.53:4317"
+		endpoint = "178.128.213.168:4317"
 		log.Printf("Using default LS endpoint %s", endpoint)
 	}
 
@@ -67,7 +65,7 @@ func newExporter(ctx context.Context) (*otlptrace.Exporter, error) {
 func newTraceProvider(exp *otlptrace.Exporter) *sdktrace.TracerProvider {
 
 	if len(serviceName) == 0 {
-		serviceName = "test-go-client-collector-belajar"
+		serviceName = "test-go-client-collector"
 		log.Printf("Using default service name %s", serviceName)
 	}
 
@@ -115,7 +113,7 @@ func makeRequest(ctx context.Context) {
 	defer span.End()
 
 	if len(targetURL) == 0 {
-		targetURL = "http://207.154.218.53:8081/ping"
+		targetURL = "http://178.128.213.168:8081/ping"
 		log.Printf("Using default targetURL %s", targetURL)
 	}
 
@@ -137,13 +135,12 @@ func makeRequest(ctx context.Context) {
 	span.AddEvent("Made a request", trace.WithAttributes(attribute.String("greeting", "Hello"), attribute.String("farewell", "Bye")))
 }
 
-
 func makeRequestS1(ctx context.Context) {
 	ctx, span := tracer.Start(ctx, "makeRequest")
 	defer span.End()
 
 	if len(targetURLS1) == 0 {
-		targetURL = "http://207.154.218.53:8081/ping"
+		targetURL = "http://localhost:8081/ping"
 		log.Printf("Using default targetURL %s", targetURLS1)
 	}
 
@@ -163,7 +160,7 @@ func makeRequestS1(ctx context.Context) {
 	)
 
 	span.AddEvent("Made a request", trace.WithAttributes(attribute.String("greeting", "Hello"), attribute.String("farewell", "Bye")))
-	
+
 }
 
 func main() {
@@ -179,21 +176,6 @@ func main() {
 
 	otel.SetTracerProvider(tp)
 
-	e := echo.New()
-
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	//router.Use(middleware.Middleware(serviceName))
-	
-
-	
-	httpPort := os.Getenv("HTTP_PORT")
-	if httpPort == "" {
-		httpPort = "8080"
-	}
-
-	
-
 	// Register context and baggage propagation.
 	// Although not strictly necessary, for this sample,
 	// it is required for distributed tracing.
@@ -206,16 +188,22 @@ func main() {
 
 	tracer = tp.Tracer(serviceName, trace.WithInstrumentationVersion(serviceVersion))
 
+	e := echo.New()
+
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "8080"
+	}
 
 	e.GET("/", func(c echo.Context) error {
+		time.Sleep(1 * time.Second)
 		makeRequest(ctx)
 		return c.HTML(http.StatusOK, "Hello, Docker! <3")
 	})
-	 
-
 
 	e.Logger.Fatal(e.Start(":" + httpPort))
-
-	
 
 }
