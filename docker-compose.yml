@@ -108,25 +108,25 @@ services:
       - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
       - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.5
 
-  # A microservice that consumes requests from the mythical-queue
-  mythical-recorder:
-    build:
-      context: ./source
-      dockerfile: docker/Dockerfile
-      args:
-        SERVICE: mythical-beasts-recorder
-    depends_on:
-      mythical-queue:
-        condition: service_healthy
-    ports:
-      - "4002:4002"
-    environment:
-      - NAMESPACE=production
-      - LOGS_TARGET=http://loki:3100/loki/api/v1/push
-      - TRACING_COLLECTOR_HOST=agent
-      - TRACING_COLLECTOR_PORT=4317
-      - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
-      - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.5
+  # # A microservice that consumes requests from the mythical-queue
+  # mythical-recorder:
+  #   build:
+  #     context: ./source
+  #     dockerfile: docker/Dockerfile
+  #     args:
+  #       SERVICE: mythical-beasts-recorder
+  #   depends_on:
+  #     mythical-queue:
+  #       condition: service_healthy
+  #   ports:
+  #     - "4002:4002"
+  #   environment:
+  #     - NAMESPACE=production
+  #     - LOGS_TARGET=http://loki:3100/loki/api/v1/push
+  #     - TRACING_COLLECTOR_HOST=agent
+  #     - TRACING_COLLECTOR_PORT=4317
+  #     - OTEL_EXPORTER_OTLP_TRACES_INSECURE=true
+  #     - OTEL_RESOURCE_ATTRIBUTES=ip=1.2.3.5
 
   go-server:
     build:
